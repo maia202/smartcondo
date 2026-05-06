@@ -1,0 +1,40 @@
+name: Gitea CD - SmartCondo Deploy
+on:
+  push:
+    branches:
+      - main  # Dispara o deploy sempre que houver alteração na main
+
+jobs:
+  deploy-local:
+    runs-on: local-runner
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Autenticar no Gitea Registry
+        run: |
+          echo "${{ secrets.GITEA_TOKEN }}" | docker login host.docker.internal:3000 -u ${{ github.actor }} --password-stdin
+
+      - name: Pull da Imagem SmartCondo
+        run: |
+          docker pull host.docker.internal:3000/${{ github.repository }}:latest
+
+      - name: Remover Versão Antiga
+        run: |
+          docker stop smartcondo-container || true
+          docker rm smartcondo-container || true
+
+      - name: Deploy da Nova Versão (Acessível na Porta 8080)
+        run: |
+          docker run -d \
+            --name smartcondo-container \
+            --restart always \
+            -p 8080:8080 \
+            host.docker.internal:3000/${{ github.repository }}:latest
+
+      - name: Verificar se a Aplicação está Online (Health Check)
+        run: |
+          echo "Aguardando o container iniciar..."
+          sleep 5
+          curl --fail http://localhost:8080 || exit 1
+          echo "Aplicação está respondendo!"
