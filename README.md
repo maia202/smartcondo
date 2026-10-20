@@ -4,7 +4,7 @@
 
 - **Líder:** Cleberson
 - **Integrantes:** Marceu, Diego, Thiago, Jeliel e Alisson
-- **Repositório Git:** [SmartCondo no GitHub](https://github.com/maia202/maia202)
+- **Repositório Git:** [SmartCondo no GitHub](https://github.com/maia202/smartcondo)
 - **Aplicação publicada:** [https://smartcondo-od8l.onrender.com/](https://smartcondo-od8l.onrender.com/)
 
 ## 1.1 Nome do Produto
@@ -92,10 +92,30 @@ classDiagram
         LocalDateTime dataHoraSaida
     }
     class CadastroController {
+        +listarUnidades() List~UnidadeResponse~
+        +criarUnidade(request: UnidadeRequest) ResponseEntity~UnidadeResponse~
+        +atualizarUnidade(id: Long, request: UnidadeRequest) UnidadeResponse
+        +excluirUnidade(id: Long) void
         +listarUnidadesPorBloco(bloco: String) List~UnidadeResponse~
+        +listarMoradores() List~MoradorResponse~
+        +criarMorador(request: MoradorRequest) ResponseEntity~MoradorResponse~
+        +atualizarMorador(id: Long, request: MoradorRequest) MoradorResponse
+        +excluirMorador(id: Long) void
         +buscarMoradorPorCpf(cpf: String) MoradorResponse
+        +listarAreasComuns() List~AreaComumResponse~
+        +criarAreaComum(request: AreaComumRequest) ResponseEntity~AreaComumResponse~
+        +atualizarAreaComum(id: Long, request: AreaComumRequest) AreaComumResponse
+        +excluirAreaComum(id: Long) void
+        +listarReservas() List~ReservaResponse~
+        +criarReserva(request: ReservaRequest) ResponseEntity~ReservaResponse~
+        +atualizarReserva(id: Long, request: ReservaRequest) ReservaResponse
+        +excluirReserva(id: Long) void
         +listarReservasPorMorador(moradorId: Long) List~ReservaResponse~
         +listarReservasPorAreaComum(areaComumId: Long) List~ReservaResponse~
+        +listarVisitantes() List~VisitanteResponse~
+        +criarVisitante(request: VisitanteRequest) ResponseEntity~VisitanteResponse~
+        +atualizarVisitante(id: Long, request: VisitanteRequest) VisitanteResponse
+        +excluirVisitante(id: Long) void
         +listarVisitantesPorUnidade(unidadeId: Long) List~VisitanteResponse~
     }
 
