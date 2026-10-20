@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7f6">
+    <title>SmartCondo | Gestão condominial</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #172b27;
+            --muted: #78847f;
+            --green: #26745c;
+            --green-dark: #1c5d49;
+            --green-soft: #e8f2ed;
+            --line: #e8edeb;
+            --paper: #fff;
+            --canvas: #f5f7f6;
+            --nav: #173b32;
+            --shadow: 0 10px 30px rgba(28, 52, 44, .045);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--canvas);
+            color: var(--ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px;
+        }
+        button, a { font: inherit; }
+        button { cursor: pointer; }
+        .app { min-height: 100vh; }
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 3;
+            display: flex;
+            width: 246px;
+            flex-direction: column;
+            padding: 27px 17px 18px;
+            background: var(--nav);
+            color: #f2f7f4;
+        }
+        .brand { display: flex; align-items: center; gap: 11px; padding: 0 8px; }
+        .brand-mark {
+            display: grid;
+            width: 37px;
+            height: 37px;
+            place-items: center;
+            border-radius: 12px;
+            background: #d5eadf;
+            color: var(--green-dark);
+        }
+        .brand-name { font-size: 17px; font-weight: 720; letter-spacing: -.45px; }
+        .brand-caption { margin-top: 2px; color: #b9ccc4; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+        .nav-label { margin: 39px 10px 11px; color: #a8c0b6; font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+        .nav-list { display: grid; gap: 5px; }
+        .nav-link {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 12px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: #c3d3cd;
+            text-align: left;
+            transition: background .16s ease, color .16s ease;
+        }
+        .nav-link:hover { background: rgba(255,255,255,.075); color: #fff; }
+        .nav-link.active { background: #2b594b; color: #fff; }
+        .nav-link svg, .brand-mark svg, .icon-wrap svg { width: 18px; height: 18px; flex: none; }
+        .nav-link .soon { margin-left: auto; color: #b8cec4; font-size: 9px; }
+        .sidebar-bottom { margin-top: auto; }
+        .sidebar-note { padding: 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 11px; background: rgba(255,255,255,.045); }
+        .sidebar-note-title { font-size: 12px; font-weight: 650; }
+        .sidebar-note-text { margin-top: 6px; color: #bed0c8; font-size: 11px; line-height: 1.6; }
+        .version { padding: 16px 9px 0; color: #9bb5aa; font-size: 10px; }
+
+        .main { min-height: 100vh; margin-left: 246px; }
+        .topbar {
+            display: flex;
+            min-height: 76px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 42px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255,255,255,.84);
+        }
+        .breadcrumb { color: var(--muted); font-size: 12px; }
+        .breadcrumb strong { color: var(--ink); font-weight: 650; }
+        .topbar-right { display: flex; align-items: center; gap: 17px; }
+        .system-state { display: flex; align-items: center; gap: 7px; color: #5f7069; font-size: 11px; }
+        .state-dot { width: 7px; height: 7px; border-radius: 50%; background: #36a879; box-shadow: 0 0 0 3px #e5f4ed; }
+        .avatar { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #dce7e1; border-radius: 50%; background: #e9f2ed; color: var(--green-dark); font-size: 11px; font-weight: 700; }
+        .content { max-width: 1390px; margin: 0 auto; padding: 39px 42px 54px; }
+        .welcome { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 27px; }
+        .eyebrow { margin-bottom: 9px; color: var(--green); font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+        h1 { margin: 0; font-size: clamp(26px, 3vw, 34px); font-weight: 690; letter-spacing: -1.2px; }
+        .subtitle { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+        .date-pill { padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: #68766f; font-size: 11px; white-space: nowrap; }
+
+        .hero {
+            position: relative;
+            display: flex;
+            min-height: 194px;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+            padding: 29px 34px;
+            border-radius: 14px;
+            background: linear-gradient(115deg, #1b5947 0%, #26745c 58%, #348568 100%);
+            box-shadow: 0 14px 28px rgba(34, 102, 78, .13);
+            color: white;
+        }
+        .hero-copy { position: relative; z-index: 1; max-width: 530px; }
+        .hero-kicker { display: flex; align-items: center; gap: 7px; color: #d2e9dd; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+        .hero h2 { margin: 13px 0 8px; font-size: clamp(21px, 2.6vw, 27px); font-weight: 650; letter-spacing: -.65px; }
+        .hero p { max-width: 475px; margin: 0; color: #d5e8df; font-size: 12px; line-height: 1.7; }
+        .hero-button { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px; margin-top: 19px; padding: 10px 13px; border: 0; border-radius: 7px; background: #f5faf7; color: #205c49; font-size: 11px; font-weight: 700; }
+        .hero-button:hover { background: white; }
+        .hero-art { position: absolute; right: 5%; width: 245px; height: 190px; opacity: .19; }
+        .hero-art .circle { position: absolute; right: 0; top: -40px; width: 210px; height: 210px; border: 1px solid white; border-radius: 50%; }
+        .hero-art .circle:before, .hero-art .circle:after { position: absolute; inset: 20px; border: 1px solid white; border-radius: 50%; content: ""; }
+        .hero-art .circle:after { inset: 43px; }
+        .hero-art .building { position: absolute; right: 70px; bottom: 13px; width: 91px; height: 104px; border: 1px solid white; border-radius: 5px 5px 0 0; background: linear-gradient(90deg, transparent 48%, rgba(255,255,255,.25) 49%, rgba(255,255,255,.25) 51%, transparent 52%); }
+        .hero-art .building:before { position: absolute; inset: 13px 12px; background: repeating-linear-gradient(to bottom, transparent 0 14px, rgba(255,255,255,.75) 14px 16px); content: ""; }
+
+        .section-heading { display: flex; align-items: center; justify-content: space-between; margin: 31px 0 14px; }
+        .section-heading h2 { margin: 0; font-size: 15px; font-weight: 680; letter-spacing: -.25px; }
+        .section-heading span { color: var(--muted); font-size: 11px; }
+        .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; }
+        .stat-card { min-height: 128px; padding: 16px 16px 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); box-shadow: var(--shadow); }
+        .stat-top { display: flex; align-items: center; justify-content: space-between; }
+        .stat-label { color: #697770; font-size: 11px; }
+        .icon-wrap { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 9px; background: var(--green-soft); color: var(--green); }
+        .stat-value { margin-top: 13px; font-size: 26px; font-weight: 690; letter-spacing: -.7px; }
+        .stat-caption { margin-top: 3px; color: #87928d; font-size: 10px; }
+
+        .lower-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(270px, .85fr); gap: 15px; margin-top: 18px; }
+        .panel { min-height: 228px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); box-shadow: var(--shadow); }
+        .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 17px 19px; border-bottom: 1px solid #eef1ef; }
+        .panel-head h3 { margin: 0; font-size: 12px; font-weight: 680; }
+        .panel-head span { color: var(--muted); font-size: 10px; }
+        .empty { display: grid; min-height: 169px; place-items: center; padding: 20px; text-align: center; }
+        .empty-icon { display: grid; width: 38px; height: 38px; place-items: center; margin: 0 auto 10px; border-radius: 12px; background: #f0f5f2; color: #66917d; }
+        .empty-icon svg { width: 18px; height: 18px; }
+        .empty-title { font-size: 11px; font-weight: 650; }
+        .empty-text { max-width: 270px; margin: 5px auto 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+        .recent-list { display: grid; gap: 0; padding: 0 18px; }
+        .recent-item { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr) auto; align-items: center; gap: 12px; padding: 13px 2px; border-bottom: 1px solid #eff2f0; }
+        .recent-item:last-child { border-bottom: 0; }
+        .recent-primary { color: var(--ink); font-size: 10px; font-weight: 650; }
+        .recent-secondary { margin-top: 4px; color: var(--muted); font-size: 9px; }
+        .status-pill { padding: 5px 8px; border-radius: 20px; background: #eef4f0; color: #527261; font-size: 9px; font-weight: 650; }
+
+        .quick-list { display: grid; gap: 9px; padding: 14px; }
+        .quick-link { display: flex; align-items: center; gap: 11px; padding: 10px; border: 1px solid #edf1ef; border-radius: 8px; background: white; color: var(--ink); text-align: left; transition: border-color .15s, transform .15s; }
+        .quick-link:hover { transform: translateY(-1px); border-color: #c5dbce; }
+        .quick-link .icon-wrap { width: 32px; height: 32px; }
+        .quick-title { font-size: 10px; font-weight: 650; }
+        .quick-description { margin-top: 3px; color: var(--muted); font-size: 9px; }
+        .arrow { margin-left: auto; color: #91a098; font-size: 15px; }
+        .footer-note { margin-top: 19px; color: #89948f; font-size: 10px; text-align: center; }
+
+        .module-view { display: grid; min-height: 450px; place-items: center; }
+        .module-actions { display: flex; align-items: center; gap: 9px; }
+        .primary-button, .secondary-button, .danger-button, .table-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 650;
+        }
+        .primary-button { padding: 10px 13px; border: 1px solid var(--green); background: var(--green); color: white; }
+        .primary-button:hover { background: var(--green-dark); }
+        .secondary-button { padding: 9px 12px; border: 1px solid var(--line); background: white; color: #57675f; }
+        .secondary-button:hover { border-color: #c7d9d0; }
+        .danger-button { padding: 9px 12px; border: 1px solid #f0d9d6; background: #fff8f7; color: #aa4e45; }
+        .danger-button:hover { background: #fff0ed; }
+        .module-notice { margin: -9px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+        .form-panel { margin-bottom: 15px; padding: 19px; border: 1px solid var(--line); border-radius: 11px; background: white; box-shadow: var(--shadow); }
+        .form-panel[hidden] { display: none; }
+        .form-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 17px; }
+        .form-heading h2 { margin: 0; font-size: 14px; font-weight: 680; }
+        .form-heading p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+        .form-field { display: grid; align-content: start; gap: 6px; min-width: 0; }
+        .form-field.full { grid-column: 1 / -1; }
+        .form-field label { color: #4f6058; font-size: 10px; font-weight: 650; }
+        .form-field input, .form-field select, .form-field textarea {
+            width: 100%; min-height: 38px; padding: 9px 10px; border: 1px solid #dfe7e3; border-radius: 7px;
+            outline: none; background: #fff; color: var(--ink); font: inherit; font-size: 11px;
+        }
+        .field-hint { color: var(--muted); font-size: 9px; line-height: 1.5; }
+        .field-hint button { padding: 0; border: 0; background: transparent; color: var(--green-dark); font-size: inherit; font-weight: 700; text-decoration: underline; }
+        .form-field textarea { min-height: 76px; resize: vertical; }
+        .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: #6fa88e; box-shadow: 0 0 0 3px #eaf4ee; }
+        .check-field { display: flex; min-height: 38px; align-items: center; gap: 8px; color: #4f6058; font-size: 11px; }
+        .check-field input { width: 15px; min-height: 15px; accent-color: var(--green); }
+        .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+        .form-message { min-height: 17px; margin-top: 10px; color: #a64c43; font-size: 10px; }
+        .list-panel { overflow: hidden; }
+        .list-panel .panel-head { padding: 15px 17px; }
+        .table-scroll { width: 100%; overflow-x: auto; }
+        .records-table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+        .records-table th { padding: 11px 14px; background: #fafcfb; color: #75817b; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+        .records-table td { padding: 12px 14px; border-top: 1px solid #eff2f0; color: #4a5a53; font-size: 10px; }
+        .records-table tbody tr:hover { background: #fbfdfc; }
+        .record-name { color: var(--ink); font-weight: 650; }
+        .row-actions { display: flex; gap: 6px; }
+        .table-action { padding: 6px 8px; border: 1px solid #e6ece8; background: white; color: #52655b; }
+        .table-action:hover { border-color: #c5d9ce; color: var(--green-dark); }
+        .table-action.delete { color: #a64c43; }
+        .empty-table { padding: 44px 20px; color: var(--muted); font-size: 11px; text-align: center; }
+        .module-notice.error { color: #a64c43; }
+        .module-card { width: min(480px, 100%); padding: 36px; border: 1px solid var(--line); border-radius: 14px; background: white; box-shadow: var(--shadow); text-align: center; }
+        .module-card .empty-icon { width: 48px; height: 48px; }
+        .module-card h2 { margin: 15px 0 8px; font-size: 21px; letter-spacing: -.5px; }
+        .module-card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+        .module-badge { display: inline-block; margin-top: 19px; padding: 7px 10px; border-radius: 20px; background: #f2f5f3; color: #64736b; font-size: 10px; font-weight: 650; }
+        .back-button { margin-top: 20px; padding: 9px 12px; border: 0; border-radius: 7px; background: var(--green); color: white; font-size: 11px; font-weight: 650; }
+        .back-button:hover { background: var(--green-dark); }
+
+        @media (max-width: 1100px) {
+            .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .content { padding-right: 28px; padding-left: 28px; }
+            .topbar { padding-right: 28px; padding-left: 28px; }
+        }
+        @media (max-width: 760px) {
+            .sidebar { position: static; width: auto; min-height: auto; padding: 13px 16px; }
+            .brand { padding: 0 2px; }
+            .nav-label, .sidebar-bottom { display: none; }
+            .nav-list { display: flex; gap: 4px; overflow-x: auto; margin-top: 14px; padding-bottom: 2px; }
+            .nav-link { width: auto; flex: none; gap: 7px; padding: 9px 10px; font-size: 11px; }
+            .nav-link svg { width: 15px; height: 15px; }
+            .nav-link .soon { display: none; }
+            .main { margin-left: 0; }
+            .topbar { min-height: 57px; padding: 0 19px; }
+            .content { padding: 27px 19px 38px; }
+            .welcome { align-items: flex-start; flex-direction: column; }
+            .hero { min-height: 205px; padding: 24px; }
+            .hero-art { right: -80px; opacity: .12; }
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .stat-card { min-height: 116px; padding: 13px; }
+            .lower-grid { grid-template-columns: 1fr; }
+            .module-actions { width: 100%; }
+            .module-actions .primary-button { width: 100%; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-field.full { grid-column: auto; }
+            .recent-item { grid-template-columns: 1fr auto; }
+            .recent-item > div:nth-child(2) { grid-column: 1; }
+            .recent-item .status-pill { grid-column: 2; grid-row: 1 / span 2; }
+            .system-state { font-size: 0; }
+        }
+        @media (max-width: 390px) {
+            .nav-link { padding: 8px; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .stat-label { font-size: 10px; }
+            .stat-value { font-size: 23px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-5h6v5M8 10h.01M12 10h.01M16 10h.01"/></svg>
+            </div>
+            <div><div class="brand-name">SmartCondo</div><div class="brand-caption">Gestão inteligente</div></div>
+        </div>
+        <div class="nav-label">Menu principal</div>
+        <nav class="nav-list" aria-label="Menu principal">
+            <button class="nav-link active" data-view="dashboard" data-title="Visão geral" aria-current="page">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="12.5" width="7" height="8" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+                Visão geral
+            </button>
+            <button class="nav-link" data-view="moradores" data-title="Moradores">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20"/><circle cx="9.5" cy="7" r="4"/><path d="M17 11a4 4 0 0 0 0-8M21 20v-1.5a4 4 0 0 0-3-3.87"/></svg>
+                Moradores
+            </button>
+            <button class="nav-link" data-view="unidades" data-title="Unidades">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5V20M2.5 20h19"/><path d="M8 8h2M14 8h2M8 12h2M14 12h2M10 20v-4h4v4"/></svg>
+                Unidades
+            </button>
+            <button class="nav-link" data-view="reservas" data-title="Reservas">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M7.5 3v4M16.5 3v4M3.5 10h17M8 14h3M8 17h6"/></svg>
+                Reservas
+            </button>
+            <button class="nav-link" data-view="visitantes" data-title="Visitantes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="8.5" cy="7" r="4"/><path d="M18 8v6M15 11h6"/></svg>
+                Visitantes
+            </button>
+            <button class="nav-link" data-view="areas" data-title="Áreas comuns">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-6h6v6"/><path d="M8 10h.01M16 10h.01"/></svg>
+                Áreas comuns
+            </button>
+        </nav>
+        <div class="sidebar-bottom">
+            <div class="sidebar-note">
+                <div class="sidebar-note-title">Etapa de desenvolvimento</div>
+                <div class="sidebar-note-text">Cadastre e organize moradores, unidades, reservas, visitantes e espaços comuns.</div>
+            </div>
+            <div class="version">SmartCondo · Projeto acadêmico</div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div class="breadcrumb">SmartCondo <span aria-hidden="true">/</span> <strong id="breadcrumb-title">Visão geral</strong></div>
+            <div class="topbar-right">
+                <div class="system-state"><span class="state-dot" id="state-dot"></span><span id="connection-label">Conectando ao sistema</span></div>
+                <div class="avatar" aria-label="Perfil da administração">SC</div>
+            </div>
+        </header>
+
+        <div class="content" id="dashboard-view">
+            <section class="welcome">
+                <div>
+                    <div class="eyebrow">Painel do condomínio</div>
+                    <h1>Bom dia!</h1>
+                    <p class="subtitle">Acompanhe as informações do seu condomínio em um só lugar.</p>
+                </div>
+                <div class="date-pill" id="today"></div>
+            </section>
+
+            <section class="hero" aria-label="Boas-vindas ao SmartCondo">
+                <div class="hero-copy">
+                    <div class="hero-kicker"><span>●</span> Seu condomínio, mais conectado</div>
+                    <h2>Bem-vindo ao SmartCondo</h2>
+                    <p>Uma nova forma de organizar a rotina do condomínio. Aqui você acompanha moradores, unidades, reservas, visitantes e áreas comuns.</p>
+                    <button class="hero-button" data-go="reservas">Conheça os módulos <span aria-hidden="true">→</span></button>
+                </div>
+                <div class="hero-art" aria-hidden="true"><div class="circle"></div><div class="building"></div></div>
+            </section>
+
+            <section aria-labelledby="summary-title">
+                <div class="section-heading"><h2 id="summary-title">Resumo do condomínio</h2><span>Dados atualizados do sistema</span></div>
+                <div class="stats">
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Moradores</span><span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="4"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 5a4 4 0 0 1 0 7.7M18 15a5.5 5.5 0 0 1 3.5 5"/></svg></span></div>
+                        <div class="stat-value" data-stat="moradores">—</div><div class="stat-caption">pessoas cadastradas</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Unidades</span><span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5V20M2 20h20M8 8h2m4 0h2m-8 4h2m4 0h2m-6 8v-4h4v4"/></svg></span></div>
+                        <div class="stat-value" data-stat="unidades">—</div><div class="stat-caption">unidades registradas</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Reservas</span><span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M7.5 3v4m9-4v4m-13 3h17m-12 4h5m-5 3h3"/></svg></span></div>
+                        <div class="stat-value" data-stat="reservas">—</div><div class="stat-caption">reservas registradas</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Visitantes</span><span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="7" r="4"/><path d="M2 20a6.5 6.5 0 0 1 13 0m3-12v8m-4-4h8"/></svg></span></div>
+                        <div class="stat-value" data-stat="visitantes">—</div><div class="stat-caption">registros de visitantes</div>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-top"><span class="stat-label">Áreas comuns</span><span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M5 20V9l7-5 7 5v11m-10 0v-6h6v6M8 10h.01M16 10h.01"/></svg></span></div>
+                        <div class="stat-value" data-stat="areasComuns">—</div><div class="stat-caption">espaços cadastrados</div>
+                    </article>
+                </div>
+            </section>
+
+            <div class="lower-grid">
+                <section class="panel" aria-labelledby="reservations-title">
+                    <div class="panel-head"><h3 id="reservations-title">Reservas recentes</h3><span>Visão geral</span></div>
+                    <div class="empty" id="recent-reservations">
+                        <div>
+                            <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M7.5 3v4m9-4v4m-13 3h17m-12 4h5"/></svg></div>
+                            <div class="empty-title">Nenhuma reserva para exibir</div>
+                            <div class="empty-text">Quando as reservas forem registradas, você poderá acompanhar os próximos agendamentos por aqui.</div>
+                        </div>
+                    </div>
+                </section>
+                <section class="panel" aria-labelledby="shortcuts-title">
+                    <div class="panel-head"><h3 id="shortcuts-title">Acesso rápido</h3><span>Módulos do sistema</span></div>
+                    <div class="quick-list">
+                        <button class="quick-link" data-go="moradores"><span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="4"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M17 8h5m-2.5-2.5v5"/></svg></span><span><span class="quick-title">Moradores</span><span class="quick-description">Cadastro e consulta</span></span><span class="arrow">›</span></button>
+                        <button class="quick-link" data-go="unidades"><span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V5h16v15M2 20h20M8 9h2m4 0h2m-8 4h2m4 0h2"/></svg></span><span><span class="quick-title">Unidades</span><span class="quick-description">Organização por bloco</span></span><span class="arrow">›</span></button>
+                        <button class="quick-link" data-go="areas"><span class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 20h18M5 20V9l7-5 7 5v11m-10 0v-6h6v6"/></svg></span><span><span class="quick-title">Áreas comuns</span><span class="quick-description">Espaços do condomínio</span></span><span class="arrow">›</span></button>
+                    </div>
+                </section>
+            </div>
+            <div class="footer-note">SmartCondo · Gestão condominial simples e organizada</div>
+        </div>
+        <div class="content" id="module-view" hidden>
+            <section class="welcome">
+                <div><div class="eyebrow">Painel do condomínio</div><h1 id="module-title"></h1><p class="subtitle" id="module-subtitle">Cadastre, consulte, edite e remova informações.</p></div>
+                <div class="module-actions">
+                    <button class="primary-button" id="new-record-button" type="button"><span aria-hidden="true">＋</span> Novo cadastro</button>
+                </div>
+            </section>
+            <p class="module-notice" id="module-message" role="status" aria-live="polite"></p>
+            <section class="form-panel" id="editor-panel" hidden>
+                <div class="form-heading">
+                    <div><h2 id="form-title">Novo cadastro</h2><p>Preencha os campos obrigatórios para salvar.</p></div>
+                </div>
+                <form id="record-form" novalidate>
+                    <div class="form-grid" id="form-fields"></div>
+                    <div class="form-message" id="form-message" role="alert"></div>
+                    <div class="form-actions">
+                        <button class="secondary-button" id="cancel-form-button" type="button">Cancelar</button>
+                        <button class="primary-button" type="submit">Salvar cadastro</button>
+                    </div>
+                </form>
+            </section>
+            <section class="panel list-panel">
+                <div class="panel-head"><h3 id="table-title">Cadastros</h3><span id="record-count">Carregando...</span></div>
+                <div id="records-container"></div>
+            </section>
+        </div>
+    </main>
+</div>
+<script>
+    const labels = {
+        dashboard: "Visão geral",
+        moradores: "Moradores",
+        unidades: "Unidades",
+        reservas: "Reservas",
+        visitantes: "Visitantes",
+        areas: "Áreas comuns"
+    };
+    const icons = {
+        moradores: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="8" r="4"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M17 8h5m-2.5-2.5v5"/></svg>',
+        unidades: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 20V5h16v15M2 20h20M8 9h2m4 0h2m-8 4h2m4 0h2"/></svg>',
+        reservas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M7.5 3v4m9-4v4m-13 3h17"/></svg>',
+        visitantes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8.5" cy="7" r="4"/><path d="M2 20a6.5 6.5 0 0 1 13 0m3-12v8m-4-4h8"/></svg>',
+        areas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 20h18M5 20V9l7-5 7 5v11m-10 0v-6h6v6"/></svg>'
+    };
+    const dashboard = document.getElementById("dashboard-view");
+    const moduleView = document.getElementById("module-view");
+    const recordsContainer = document.getElementById("records-container");
+    const recordForm = document.getElementById("record-form");
+    const editorPanel = document.getElementById("editor-panel");
+    const formFields = document.getElementById("form-fields");
+    const formMessage = document.getElementById("form-message");
+    const moduleMessage = document.getElementById("module-message");
+    const relations = { unidades: [], moradores: [], areasComuns: [] };
+    let currentView = "dashboard";
+    let currentRecords = [];
+    let editingRecordId = null;
+
+    const modules = {
+        moradores: {
+            endpoint: "/api/moradores",
+            extraRelations: ["unidades"],
+            columns: [["nome", "Nome"], ["cpf", "CPF"], ["email", "E-mail"], ["telefone", "Telefone"], ["unidadeId", "Unidade"]],
+            fields: [
+                { name: "nome", label: "Nome completo", required: true },
+                { name: "cpf", label: "CPF", required: true, maxlength: 14, placeholder: "000.000.000-00" },
+                { name: "email", label: "E-mail", type: "email" },
+                { name: "telefone", label: "Telefone", type: "tel" },
+                { name: "dataCadastro", label: "Data de cadastro", type: "date" },
+                { name: "bloco", label: "Bloco", type: "select", required: true,
+                    choices: Array.from({ length: 14 }, (_, index) => {
+                        const value = String(index + 1);
+                        return [value, `Bloco ${value}`];
+                    }) },
+                { name: "apartamento", label: "Apartamento", type: "select", required: true,
+                    choices: ["11", "12", "13", "14", "21", "22", "23", "24",
+                        "31", "32", "33", "34", "41", "42", "43", "44"]
+                        .map((value) => [value, `Apartamento ${value}`]) }
+            ]
+        },
+        unidades: {
+            endpoint: "/api/unidades",
+            columns: [["bloco", "Bloco"], ["numero", "Número"], ["areaMetrosQuadrados", "Área (m²)"]],
+            fields: [
+                { name: "bloco", label: "Bloco", type: "select", required: true,
+                    choices: Array.from({ length: 14 }, (_, index) => {
+                        const value = String(index + 1);
+                        return [value, `Bloco ${value}`];
+                    }) },
+                { name: "numero", label: "Apartamento", type: "select", required: true,
+                    choices: ["11", "12", "13", "14", "21", "22", "23", "24",
+                        "31", "32", "33", "34", "41", "42", "43", "44"]
+                        .map((value) => [value, `Apartamento ${value}`]) },
+                { name: "areaMetrosQuadrados", label: "Área (m²)", type: "number", min: 0, step: "0.01" }
+            ]
+        },
+        areas: {
+            endpoint: "/api/areas-comuns",
+            columns: [["nome", "Área comum"], ["descricao", "Descrição"], ["capacidade", "Capacidade"], ["ativa", "Ativa"]],
+            fields: [
+                { name: "nome", label: "Nome da área", required: true,
+                    suggestions: ["Salão de festas", "Churrasqueira"] },
+                { name: "capacidade", label: "Capacidade de pessoas", type: "number", min: 1, required: true },
+                { name: "descricao", label: "Descrição", type: "textarea", full: true },
+                { name: "ativa", label: "Disponível para reserva", type: "checkbox", defaultValue: true }
+            ]
+        },
+        reservas: {
+            endpoint: "/api/reservas",
+            extraRelations: ["unidades"],
+            columns: [["areaComumId", "Espaço"], ["moradorId", "Morador responsável"], ["dataHoraInicio", "Início"], ["dataHoraFim", "Fim"], ["status", "Situação"]],
+            fields: [
+                { name: "moradorId", label: "Morador responsável", type: "select", options: "moradores", required: true },
+                { name: "areaComumId", label: "Espaço comum (local da reserva)", type: "select", options: "areasComuns", required: true,
+                    hint: "Área comum é o espaço; a reserva é o agendamento desse espaço." },
+                { name: "dataHoraInicio", label: "Data e hora de início", type: "datetime-local", required: true },
+                { name: "dataHoraFim", label: "Data e hora de término", type: "datetime-local", required: true },
+                { name: "quantidadeConvidados", label: "Quantidade de convidados", type: "number", min: 0, defaultValue: 0 },
+                { name: "status", label: "Situação", type: "select", defaultValue: "PENDENTE", choices: [["PENDENTE", "Pendente"], ["CONFIRMADA", "Confirmada"], ["CANCELADA", "Cancelada"]] }
+            ]
+        },
+        visitantes: {
+            endpoint: "/api/visitantes",
+            columns: [["nome", "Visitante"], ["documento", "Documento"], ["telefone", "Telefone"], ["unidadeId", "Unidade"], ["dataHoraEntrada", "Entrada"], ["dataHoraSaida", "Saída"]],
+            fields: [
+                { name: "nome", label: "Nome do visitante", required: true },
+                { name: "documento", label: "Documento", required: true },
+                { name: "telefone", label: "Telefone", type: "tel" },
+                { name: "unidadeId", label: "Unidade de destino", type: "select", options: "unidades", required: true },
+                { name: "dataHoraEntrada", label: "Data e hora de entrada", type: "datetime-local", required: true },
+                { name: "dataHoraSaida", label: "Data e hora de saída", type: "datetime-local" }
+            ]
+        }
+    };
+
+    document.getElementById("today").textContent = new Intl.DateTimeFormat("pt-BR", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric"
+    }).format(new Date());
+
+    function showView(view) {
+        const title = labels[view] || labels.dashboard;
+        const isDashboard = view === "dashboard";
+        currentView = isDashboard ? "dashboard" : view;
+        dashboard.hidden = !isDashboard;
+        moduleView.hidden = isDashboard;
+        document.getElementById("breadcrumb-title").textContent = title;
+
+        document.querySelectorAll(".nav-link").forEach((link) => {
+            const active = link.dataset.view === view;
+            link.classList.toggle("active", active);
+            if (active) link.setAttribute("aria-current", "page");
+            else link.removeAttribute("aria-current");
+        });
+
+        if (!isDashboard) {
+            document.getElementById("module-title").textContent = title;
+            document.getElementById("table-title").textContent = `Lista de ${title.toLowerCase()}`;
+            document.getElementById("new-record-button").setAttribute("aria-label", `Novo cadastro de ${title.toLowerCase()}`);
+            closeEditor();
+            loadModule(view);
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    document.addEventListener("click", (event) => {
+        const navigation = event.target.closest("[data-view], [data-go]");
+        if (navigation) showView(navigation.dataset.view || navigation.dataset.go);
+    });
+
+    async function requestJson(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: { "Content-Type": "application/json", ...(options.headers || {}) }
+        });
+        if (!response.ok) {
+            let message = `A solicitação falhou (${response.status}).`;
+            try {
+                const problem = await response.json();
+                message = problem.message || problem.detail || message;
+            } catch (error) {
+                console.error("Não foi possível ler a mensagem de erro da API.", error);
+            }
+            throw new Error(message);
+        }
+        if (response.status === 204) return null;
+        const text = await response.text();
+        return text ? JSON.parse(text) : null;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function optionLabel(resource, item) {
+        if (resource === "unidades") return `Bloco ${item.bloco} · ${item.numero}`;
+        if (resource === "moradores") {
+            const unit = relations.unidades.find((option) => option.id === item.unidadeId);
+            const unitLabel = unit ? ` · Bloco ${unit.bloco}, ap. ${unit.numero}` : "";
+            return `${item.nome} · CPF ${item.cpf}${unitLabel}`;
+        }
+        return item.nome;
+    }
+
+    async function loadRelations(config) {
+        const requiredRelations = [...new Set([
+            ...config.fields.filter((field) => field.options).map((field) => field.options),
+            ...(config.extraRelations || [])
+        ])];
+        const resourceEndpoints = { unidades: "/api/unidades", moradores: "/api/moradores", areasComuns: "/api/areas-comuns" };
+        await Promise.all(requiredRelations.map(async (resource) => {
+            relations[resource] = await requestJson(resourceEndpoints[resource]);
+        }));
+    }
+
+    async function loadModule(view) {
+        const config = modules[view];
+        moduleMessage.textContent = "Carregando cadastros...";
+        moduleMessage.classList.remove("error");
+        document.getElementById("record-count").textContent = "Carregando...";
+        recordsContainer.innerHTML = "";
+        try {
+            await loadRelations(config);
+            currentRecords = await requestJson(config.endpoint);
+            renderRecords(view);
+            moduleMessage.textContent = "";
+            if (currentView === view) loadDashboard();
+        } catch (error) {
+            currentRecords = [];
+            document.getElementById("record-count").textContent = "Não carregado";
+            recordsContainer.innerHTML = '<div class="empty-table">Não foi possível carregar os cadastros.</div>';
+            moduleMessage.textContent = error.message;
+            moduleMessage.classList.add("error");
+            console.error("Erro ao carregar o módulo.", error);
+        }
+    }
+
+    function formatValue(key, value) {
+        if (value === null || value === undefined || value === "") return "—";
+        if (key === "unidadeId") {
+            const item = relations.unidades.find((unit) => unit.id === Number(value));
+            return item ? `Bloco ${item.bloco} · ${item.numero}` : "Unidade indisponível";
+        }
+        if (key === "moradorId") {
+            const item = relations.moradores.find((resident) => resident.id === Number(value));
+            return item ? item.nome : "Morador indisponível";
+        }
+        if (key === "areaComumId") {
+            const item = relations.areasComuns.find((area) => area.id === Number(value));
+            return item ? item.nome : "Área indisponível";
+        }
+        if (key === "ativa") return value ? "Sim" : "Não";
+        if (key === "status") return ({ PENDENTE: "Pendente", CONFIRMADA: "Confirmada", CANCELADA: "Cancelada" })[value] || value;
+        if (key.startsWith("dataHora")) {
+            const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+            if (match) return `${match[3]}/${match[2]}/${match[1]} às ${match[4]}:${match[5]}`;
+        }
+        if (key === "dataCadastro") {
+            const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+        }
+        return String(value);
+    }
+
+    function renderRecords(view) {
+        const config = modules[view];
+        document.getElementById("record-count").textContent =
+            `${currentRecords.length} ${currentRecords.length === 1 ? "registro" : "registros"}`;
+        if (!currentRecords.length) {
+            recordsContainer.innerHTML = '<div class="empty-table">Nenhum cadastro encontrado. Use “Novo cadastro” para adicionar o primeiro.</div>';
+            return;
+        }
+        const heading = config.columns.map(([, label]) => `<th scope="col">${escapeHtml(label)}</th>`).join("");
+        const rows = currentRecords.map((record) => {
+            const cells = config.columns.map(([key]) => {
+                const value = formatValue(key, record[key]);
+                const className = key === "nome" ? " class=\"record-name\"" : "";
+                return `<td${className}>${escapeHtml(value)}</td>`;
+            }).join("");
+            return `<tr>${cells}<td><div class="row-actions">
+                <button class="table-action" type="button" data-action="edit" data-id="${record.id}" aria-label="Editar cadastro">Editar</button>
+                <button class="table-action delete" type="button" data-action="delete" data-id="${record.id}" aria-label="Excluir cadastro">Excluir</button>
+            </div></td></tr>`;
+        }).join("");
+        recordsContainer.innerHTML = `<div class="table-scroll"><table class="records-table">
+            <thead><tr>${heading}<th scope="col">Ações</th></tr></thead><tbody>${rows}</tbody>
+        </table></div>`;
+    }
+
+    function fieldInput(field, record) {
+        const rawValue = record ? record[field.name] : field.defaultValue;
+        let value = rawValue ?? "";
+        if (record && field.type === "search-select") {
+            const item = (relations[field.options] || []).find((option) => option.id === Number(rawValue));
+            value = item ? optionLabel(field.options, item) : "";
+        }
+        const required = field.required ? " required" : "";
+        const common = `id="field-${field.name}" name="${field.name}"${required}`;
+        if (field.type === "checkbox") {
+            return `<label class="check-field"><input type="checkbox" ${common}${value ? " checked" : ""}>${escapeHtml(field.label)}</label>`;
+        }
+        if (field.type === "search-select") {
+            const listId = `options-${field.name}`;
+            const options = (relations[field.options] || []).map((item) =>
+                `<option value="${escapeHtml(optionLabel(field.options, item))}"></option>`
+            ).join("");
+            const emptyHint = field.options === "areasComuns" && !(relations.areasComuns || []).length
+                ? "Cadastre primeiro o Salão de festas ou a Churrasqueira em Áreas comuns."
+                : field.options === "moradores" && !(relations.moradores || []).length
+                    ? "Cadastre primeiro o morador no menu Moradores."
+                    : "";
+            return `<input type="search" ${common} list="${listId}" autocomplete="off" placeholder="${escapeHtml(field.placeholder || "Digite para pesquisar")}" value="${escapeHtml(value)}">
+                <datalist id="${listId}">${options}</datalist>
+                ${emptyHint ? `<small class="field-hint">${escapeHtml(emptyHint.trim())}</small>` : ""}`;
+        }
+        if (field.type === "select") {
+            const choices = field.choices
+                ? field.choices.map(([optionValue, label]) => `<option value="${escapeHtml(optionValue)}"${String(value) === optionValue ? " selected" : ""}>${escapeHtml(label)}</option>`).join("")
+                : (relations[field.options] || []).map((item) =>
+                    `<option value="${item.id}"${String(value) === String(item.id) ? " selected" : ""}>${escapeHtml(optionLabel(field.options, item))}</option>`
+                ).join("");
+            const noRecords = field.options && !(relations[field.options] || []).length;
+            const emptyOption = noRecords
+                ? `<option value="" disabled>${field.options === "moradores" ? "Nenhum morador cadastrado" : "Nenhum espaço cadastrado"}</option>`
+                : `<option value="">Selecione...</option>`;
+            const emptyHint = noRecords && field.options === "moradores"
+                ? `Cadastre o morador antes da reserva. <button type="button" data-go="moradores">Ir para Moradores</button>`
+                : noRecords && field.options === "areasComuns"
+                    ? `Cadastre o salão ou a churrasqueira antes da reserva. <button type="button" data-go="areas">Ir para Áreas comuns</button>`
+                    : field.hint;
+            return `<select ${common}>${emptyOption}${choices}</select>${emptyHint ? `<small class="field-hint">${emptyHint}</small>` : ""}`;
+        }
+        const type = field.type || "text";
+        const attrs = [
+            field.min !== undefined ? `min="${field.min}"` : "",
+            field.step ? `step="${field.step}"` : "",
+            field.maxlength ? `maxlength="${field.maxlength}"` : "",
+            field.placeholder ? `placeholder="${escapeHtml(field.placeholder)}"` : "",
+            field.suggestions?.length ? `list="suggestions-${field.name}"` : ""
+        ].filter(Boolean).join(" ");
+        if (type === "textarea") return `<textarea ${common}>${escapeHtml(value)}</textarea>`;
+        const input = `<input type="${type}" ${common}${attrs ? ` ${attrs}` : ""} value="${escapeHtml(value)}">`;
+        if (!field.suggestions?.length) return input;
+        const suggestions = field.suggestions.map((suggestion) =>
+            `<option value="${escapeHtml(suggestion)}"></option>`
+        ).join("");
+        return `${input}<datalist id="suggestions-${field.name}">${suggestions}</datalist>`;
+    }
+
+    function openEditor(record = null) {
+        const config = modules[currentView];
+        let formRecord = record;
+        if (record && currentView === "moradores") {
+            const unit = relations.unidades.find((item) => item.id === record.unidadeId);
+            formRecord = { ...record, bloco: unit?.bloco, apartamento: unit?.numero };
+        }
+        editingRecordId = record ? record.id : null;
+        document.getElementById("form-title").textContent = record ? `Editar ${labels[currentView].toLowerCase()}` : `Novo cadastro · ${labels[currentView].toLowerCase()}`;
+        document.getElementById("form-message").textContent = "";
+        formFields.innerHTML = config.fields.map((field) => `
+            <div class="form-field${field.full ? " full" : ""}">
+                ${field.type === "checkbox" ? fieldInput(field, formRecord) : `<label for="field-${field.name}">${escapeHtml(field.label)}${field.required ? " *" : ""}</label>${fieldInput(field, formRecord)}`}
+            </div>`).join("");
+        editorPanel.hidden = false;
+        editorPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        const firstField = formFields.querySelector("input:not([type=checkbox]), select, textarea");
+        if (firstField) firstField.focus({ preventScroll: true });
+    }
+
+    function closeEditor() {
+        editorPanel.hidden = true;
+        editingRecordId = null;
+        recordForm.reset();
+        formFields.innerHTML = "";
+        formMessage.textContent = "";
+    }
+
+    function formPayload(view) {
+        const config = modules[view];
+        const values = new FormData(recordForm);
+        return Object.fromEntries(config.fields.map((field) => {
+            const input = recordForm.elements.namedItem(field.name);
+            if (field.type === "checkbox") return [field.name, input.checked];
+            const value = values.get(field.name);
+            if (value === null || value === "") return [field.name, null];
+            if (field.type === "number") return [field.name, Number(value)];
+            return [field.name, String(value).trim()];
+        }));
+    }
+
+    document.getElementById("new-record-button").addEventListener("click", () => openEditor());
+    document.getElementById("cancel-form-button").addEventListener("click", closeEditor);
+
+    recordForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!recordForm.reportValidity()) return;
+        const config = modules[currentView];
+        const isEditing = editingRecordId !== null;
+        const method = editingRecordId ? "PUT" : "POST";
+        const url = editingRecordId ? `${config.endpoint}/${editingRecordId}` : config.endpoint;
+        const saveButton = recordForm.querySelector('button[type="submit"]');
+        saveButton.disabled = true;
+        saveButton.textContent = "Salvando...";
+        formMessage.textContent = "";
+        try {
+            const payload = formPayload(currentView);
+            if (currentView === "moradores") {
+                payload.unidadeId = await findOrCreateUnit(payload.bloco, payload.apartamento);
+                delete payload.bloco;
+                delete payload.apartamento;
+            }
+            await requestJson(url, { method, body: JSON.stringify(payload) });
+            closeEditor();
+            await loadModule(currentView);
+            moduleMessage.textContent = isEditing ? "Cadastro atualizado." : "Cadastro salvo com sucesso.";
+            moduleMessage.classList.remove("error");
+        } catch (error) {
+            formMessage.textContent = error.message;
+            console.error("Erro ao salvar cadastro.", error);
+        } finally {
+            saveButton.disabled = false;
+            saveButton.textContent = "Salvar cadastro";
+        }
+    });
+
+    async function findOrCreateUnit(bloco, numero) {
+        let unit = relations.unidades.find((item) => item.bloco === bloco && item.numero === numero);
+        if (unit) return unit.id;
+        try {
+            unit = await requestJson("/api/unidades", {
+                method: "POST",
+                body: JSON.stringify({ bloco, numero, areaMetrosQuadrados: null })
+            });
+            relations.unidades.push(unit);
+            return unit.id;
+        } catch (error) {
+            if (!error.message.includes("Já existe uma unidade")) throw error;
+            relations.unidades = await requestJson("/api/unidades");
+            unit = relations.unidades.find((item) => item.bloco === bloco && item.numero === numero);
+            if (!unit) throw error;
+            return unit.id;
+        }
+    }
+
+    recordsContainer.addEventListener("click", async (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+        const record = currentRecords.find((item) => item.id === Number(button.dataset.id));
+        if (!record) return;
+        if (button.dataset.action === "edit") {
+            openEditor(record);
+            return;
+        }
+        if (!window.confirm(`Deseja excluir este cadastro de ${labels[currentView].toLowerCase()}?`)) return;
+        button.disabled = true;
+        try {
+            await requestJson(`${modules[currentView].endpoint}/${record.id}`, { method: "DELETE" });
+            await loadModule(currentView);
+            moduleMessage.textContent = "Cadastro excluído.";
+            moduleMessage.classList.remove("error");
+            await loadDashboard();
+        } catch (error) {
+            moduleMessage.textContent = error.message;
+            moduleMessage.classList.add("error");
+            button.disabled = false;
+            console.error("Erro ao excluir cadastro.", error);
+        }
+    });
+
+    async function loadDashboard() {
+        const label = document.getElementById("connection-label");
+        const dot = document.getElementById("state-dot");
+        try {
+            const response = await fetch("/api/dashboard");
+            if (!response.ok) throw new Error(`Falha ao carregar o painel (${response.status})`);
+            const totals = await response.json();
+            Object.entries(totals).forEach(([key, value]) => {
+                const target = document.querySelector(`[data-stat="${key}"]`);
+                if (target) target.textContent = new Intl.NumberFormat("pt-BR").format(value);
+            });
+            label.textContent = "Sistema conectado";
+            loadRecentReservations();
+        } catch (error) {
+            label.textContent = "Sistema indisponível";
+            dot.style.background = "#d36b5e";
+            dot.style.boxShadow = "0 0 0 3px #f8e9e7";
+            document.querySelectorAll("[data-stat]").forEach((target) => target.textContent = "—");
+            console.error(error);
+        }
+    }
+
+    async function loadRecentReservations() {
+        const container = document.getElementById("recent-reservations");
+        try {
+            const [reservations, residents, areas] = await Promise.all([
+                requestJson("/api/reservas"),
+                requestJson("/api/moradores"),
+                requestJson("/api/areas-comuns")
+            ]);
+            if (!reservations.length) {
+                container.className = "empty";
+                container.innerHTML = `<div>
+                    <div class="empty-icon">${icons.reservas}</div>
+                    <div class="empty-title">Nenhuma reserva para exibir</div>
+                    <div class="empty-text">Quando as reservas forem registradas, você poderá acompanhar os próximos agendamentos por aqui.</div>
+                </div>`;
+                return;
+            }
+            const residentsById = new Map(residents.map((resident) => [resident.id, resident.nome]));
+            const areasById = new Map(areas.map((area) => [area.id, area.nome]));
+            const recent = reservations
+                .sort((left, right) => right.dataHoraInicio.localeCompare(left.dataHoraInicio))
+                .slice(0, 4);
+            container.className = "recent-list";
+            container.innerHTML = recent.map((reservation) => `
+                <div class="recent-item">
+                    <div><div class="recent-primary">${escapeHtml(areasById.get(reservation.areaComumId) || "Área comum")}</div>
+                        <div class="recent-secondary">${escapeHtml(formatValue("dataHoraInicio", reservation.dataHoraInicio))}</div></div>
+                    <div><div class="recent-primary">${escapeHtml(residentsById.get(reservation.moradorId) || "Morador")}</div>
+                        <div class="recent-secondary">${escapeHtml(`${reservation.quantidadeConvidados} convidados`)}</div></div>
+                    <span class="status-pill">${escapeHtml(formatValue("status", reservation.status))}</span>
+                </div>`).join("");
+        } catch (error) {
+            container.className = "empty";
+            container.innerHTML = '<div class="empty-text">Não foi possível carregar as reservas recentes.</div>';
+            console.error("Erro ao carregar reservas recentes.", error);
+        }
+    }
+
+    loadDashboard();
+</script>
+</body>
+</html>
