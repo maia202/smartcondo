@@ -3,9 +3,9 @@
 ## Identificação da Equipe e Submissão
 
 - **Líder:** Cleberson
-- **Integrantes:** Marceu, Diego, Thiago e Jeliel
+- **Integrantes:** Marceu, Diego, Thiago, Jeliel e Alisson
 - **Repositório Git:** [SmartCondo no GitHub](https://github.com/maia202/maia202)
-- **Aplicação:** link público não informado; a aplicação pode ser executada localmente conforme as instruções abaixo.
+- **Aplicação publicada:** [https://smartcondo-od8l.onrender.com/](https://smartcondo-od8l.onrender.com/)
 
 ## 1.1 Nome do Produto
 
