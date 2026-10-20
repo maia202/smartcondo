@@ -138,6 +138,17 @@ Em Linux ou macOS, use `./mvnw spring-boot:run`.
 
 A aplicação inicia na porta 8081. A rota `/` apresenta o painel web responsivo do SmartCondo. Os indicadores do resumo são carregados pela API `/api/dashboard`, e `/api/status` informa a disponibilidade do serviço. O console H2 fica disponível em `/h2-console` enquanto a aplicação estiver em execução. Como o banco está em memória, os dados são descartados ao encerrar a aplicação.
 
+**Publicação no Render**
+
+O arquivo `render.yaml` define um Blueprint com o serviço Docker do Spring Boot e um PostgreSQL gerenciado. Para publicar:
+
+1. Envie as alterações deste projeto para o repositório GitHub.
+2. No Render, crie um **Blueprint** e conecte o repositório que contém este projeto.
+3. Revise os recursos detectados e aplique o Blueprint. O Render criará o serviço web e o banco; as credenciais são vinculadas automaticamente, sem incluí-las no repositório.
+4. Quando o deploy terminar, abra a URL pública do serviço. A rota `/api/status` deve responder com status `online`.
+
+No Render, o perfil `render` usa PostgreSQL e desativa o console H2. Localmente, o perfil padrão continua usando H2 em memória. O plano gratuito pode suspender o serviço web quando estiver inativo e o PostgreSQL gratuito tem limitações de disponibilidade e retenção; confira as condições e prazos vigentes no Render antes de depender dele para guardar dados. Como a aplicação ainda não possui autenticação, use apenas dados fictícios na URL pública.
+
 **Cadastros REST disponíveis**
 
 O painel permite cadastrar, listar, editar e excluir as cinco entidades. No cadastro de moradores, selecione bloco e apartamento diretamente; se a unidade ainda não existir, o sistema a cria automaticamente antes de vincular o morador. Na reserva, o morador responsável e o espaço comum são selecionados em listas de cadastros existentes. O espaço comum é o local físico (por exemplo, salão de festas ou churrasqueira); a reserva é o agendamento desse espaço para um período. Cadastre esses espaços no módulo Áreas comuns antes de criar reservas.

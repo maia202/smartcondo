@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: smartcondo
+    runtime: docker
+    plan: free
+    region: ohio
+    healthCheckPath: /api/status
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: render
+      - key: DB_HOST
+        fromDatabase:
+          name: smartcondo-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: smartcondo-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: smartcondo-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: smartcondo-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: smartcondo-db
+          property: password
+
+databases:
+  - name: smartcondo-db
+    databaseName: smartcondo
+    user: smartcondo
+    plan: free
+    region: ohio
