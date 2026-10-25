@@ -164,6 +164,8 @@ O projeto usa Java 17, Spring Boot, Spring Data JPA e H2 em memória. O Maven Wr
 
 Em Linux ou macOS, use `./mvnw spring-boot:run`.
 
+Como alternativa, com Node.js instalado, `npm start` (ou `npm run dev` durante o desenvolvimento) inicia o mesmo backend Spring Boot usando o Maven Wrapper. O servidor Node não substitui a aplicação Java nem exibe uma página de demonstração. Não é necessário executar `npm install`.
+
 A aplicação inicia na porta 8081. A rota `/` apresenta o painel web responsivo do SmartCondo. Os indicadores do resumo são carregados pela API `/api/dashboard`, e `/api/status` informa a disponibilidade do serviço. O console H2 fica disponível em `/h2-console` enquanto a aplicação estiver em execução. Como o banco está em memória, os dados são descartados ao encerrar a aplicação.
 
 **Publicação no Render**
