@@ -1,0 +1,50 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Unidade {
+    Long id
+    String bloco
+    String numero
+    BigDecimal areaMetrosQuadrados
+}
+
+class Morador {
+    Long id
+    String nome
+    String cpf
+    String email
+    String telefone
+    LocalDate dataCadastro
+}
+
+class AreaComum {
+    Long id
+    String nome
+    String descricao
+    Integer capacidade
+    boolean ativa
+}
+
+class Reserva {
+    Long id
+    LocalDateTime dataHoraInicio
+    LocalDateTime dataHoraFim
+    StatusReserva status
+    Integer quantidadeConvidados
+}
+
+class Visitante {
+    Long id
+    String nome
+    String documento
+    String telefone
+    LocalDateTime dataHoraEntrada
+    LocalDateTime dataHoraSaida
+}
+
+Unidade "1" --> "0..*" Morador : possui
+Unidade "1" --> "0..*" Visitante : recebe
+Morador "1" --> "0..*" Reserva : solicita
+AreaComum "1" --> "0..*" Reserva : recebe
+
+@enduml

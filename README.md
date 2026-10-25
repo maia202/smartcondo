@@ -53,6 +53,14 @@ O objetivo é fornecer uma base centralizada para a gestão das informações es
 
 ## 3.1 Diagrama de Classes UML
 
+### Versão visual
+
+![Diagrama visual das entidades e seus relacionamentos](./docs/diagrams/diagrama-classes.png)
+
+O arquivo PlantUML editável está em [`docs/diagrams/diagrama-classes.puml`](./docs/diagrams/diagrama-classes.puml). Para renderizá-lo visualmente no VS Code, abra o arquivo `.puml` com uma extensão de PlantUML instalada.
+
+### Versão detalhada com atributos e operações
+
 ```mermaid
 classDiagram
     class Unidade {
