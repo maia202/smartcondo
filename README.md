@@ -154,17 +154,59 @@ As cinco entidades persistentes ficam no pacote `br.com.smartcondo.domain.model`
 | `Reserva` / `reservas` | `id` (Long), `dataHoraInicio` (LocalDateTime), `dataHoraFim` (LocalDateTime), `status` (StatusReserva), `quantidadeConvidados` (Integer) | Contém as FKs `morador_id` e `area_comum_id`. |
 | `Visitante` / `visitantes` | `id` (Long), `nome` (String), `documento` (String), `telefone` (String), `dataHoraEntrada` (LocalDateTime), `dataHoraSaida` (LocalDateTime) | Contém a FK `unidade_id`. |
 
-**Persistência e execução local**
+**Como executar após clonar o projeto**
 
-O projeto usa Java 17, Spring Boot, Spring Data JPA e H2 em memória. O Maven Wrapper acompanha o repositório e baixa a versão configurada do Maven na primeira execução:
+É necessário ter Git e Java 17 ou superior instalados. Não é necessário instalar Maven nem Node.js para executar o sistema: o Maven Wrapper incluído no repositório cuida do Maven, e o painel web é servido pela aplicação Spring Boot. Na primeira execução, é necessária uma conexão com a internet para baixar o Maven e as dependências Java.
+
+1. Clone o repositório e entre na pasta do projeto:
+
+   ```bash
+   git clone https://github.com/maia202/smartcondo.git
+   cd smartcondo
+   ```
+
+2. Confira se o Java está disponível:
+
+   ```bash
+   java -version
+   ```
+
+   A versão exibida deve ser 17 ou superior. Se o comando não for encontrado, instale um JDK 17+ e abra um novo terminal.
+
+3. Inicie a aplicação com o Maven Wrapper:
+
+   **Windows (PowerShell):**
+
+   ```powershell
+   .\mvnw.cmd spring-boot:run
+   ```
+
+   **Linux/macOS (terminal):**
+
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+4. Aguarde a mensagem `Started SmartCondoApplication` no terminal e abra [http://localhost:8081/](http://localhost:8081/) no navegador. Mantenha o terminal aberto enquanto estiver usando o sistema; para encerrar, pressione `Ctrl+C`.
+
+Se a porta 8081 já estiver ocupada, escolha outra antes de iniciar:
+
+**Windows (PowerShell):**
 
 ```powershell
+$env:SERVER_PORT = "8082"
 .\mvnw.cmd spring-boot:run
 ```
 
-Em Linux ou macOS, use `./mvnw spring-boot:run`.
+**Linux/macOS:**
 
-Como alternativa, com Node.js instalado, `npm start` (ou `npm run dev` durante o desenvolvimento) inicia o mesmo backend Spring Boot usando o Maven Wrapper. O servidor Node não substitui a aplicação Java nem exibe uma página de demonstração. Não é necessário executar `npm install`.
+```bash
+SERVER_PORT=8082 ./mvnw spring-boot:run
+```
+
+Nesse caso, acesse [http://localhost:8082/](http://localhost:8082/).
+
+O backend usa Java 17, Spring Boot, Spring Data JPA e H2 em memória. Opcionalmente, com Node.js instalado, `npm start` inicia a mesma aplicação pelo Maven Wrapper; Node.js não substitui o Java.
 
 A aplicação inicia na porta 8081. A rota `/` apresenta o painel web responsivo do SmartCondo. Os indicadores do resumo são carregados pela API `/api/dashboard`, e `/api/status` informa a disponibilidade do serviço. O console H2 fica disponível em `/h2-console` enquanto a aplicação estiver em execução. Como o banco está em memória, os dados são descartados ao encerrar a aplicação.
 
@@ -202,13 +244,6 @@ Além da listagem, cada recurso aceita `POST` para cadastrar, `PUT /{id}` para a
 | Visitantes por unidade | `GET /api/visitantes/unidade/{unidadeId}` |
 
 Os cadastros retornam HTTP 201, validações inválidas retornam HTTP 400 e conflitos de CPF/unidade retornam HTTP 409. CPFs inexistentes e IDs inexistentes enviados a operações de atualização ou exclusão retornam HTTP 404; consultas filtradas por IDs sem resultados retornam uma lista vazia. Registros relacionados não podem ser removidos enquanto houver dependências.
-
-Para escolher outra porta no PowerShell:
-
-```powershell
-$env:SERVER_PORT = "8081"
-.\mvnw.cmd spring-boot:run
-```
 
 Esta etapa entrega a aplicação Spring Boot, o modelo JPA, os repositórios, o painel visual com indicadores conectados ao banco e operações CRUD e consultas por filtros para os cinco cadastros. A autenticação de usuários ainda não está implementada; por isso, a aplicação não deve ser publicada com dados pessoais reais sem controles de acesso.
 
