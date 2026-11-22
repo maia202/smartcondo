@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -99,11 +100,31 @@ class CadastroControllerTest {
         assertThat(objectMapper.readTree(update.getResponse().getContentAsString()).get("nome").asText())
                 .isEqualTo("Joana Lima Atualizada");
 
-        mockMvc.perform(delete("/api/visitantes/{id}", visitanteId)).andExpect(status().isOk());
-        mockMvc.perform(delete("/api/reservas/{id}", reservaId)).andExpect(status().isOk());
-        mockMvc.perform(delete("/api/moradores/{id}", moradorId)).andExpect(status().isOk());
-        mockMvc.perform(delete("/api/areas-comuns/{id}", areaId)).andExpect(status().isOk());
-        mockMvc.perform(delete("/api/unidades/{id}", unidadeId)).andExpect(status().isOk());
+        mockMvc.perform(delete("/api/visitantes/{id}", visitanteId)).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/reservas/{id}", reservaId)).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/moradores/{id}", moradorId)).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/areas-comuns/{id}", areaId)).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/unidades/{id}", unidadeId)).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deveRetornar404ParaBuscaPorIdOuCpfInexistente() throws Exception {
+        mockMvc.perform(get("/api/unidades/{id}", 999)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/moradores/{id}", 999)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/moradores/cpf/{cpf}", "00000000000")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/areas-comuns/{id}", 999)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/reservas/{id}", 999)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/visitantes/{id}", 999)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveRetornarErrosDeValidacaoEstruturados() throws Exception {
+        mockMvc.perform(post("/api/unidades")
+                        .contentType("application/json")
+                        .content("{\"bloco\":\"\",\"numero\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").exists())
+                .andExpect(jsonPath("$.errors[0].message").isNotEmpty());
     }
 
     @Test

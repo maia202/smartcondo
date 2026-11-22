@@ -1,5 +1,15 @@
 package br.com.smartcondo.controller;
 
+import br.com.smartcondo.api.dto.AreaComumRequest;
+import br.com.smartcondo.api.dto.AreaComumResponse;
+import br.com.smartcondo.api.dto.MoradorRequest;
+import br.com.smartcondo.api.dto.MoradorResponse;
+import br.com.smartcondo.api.dto.ReservaRequest;
+import br.com.smartcondo.api.dto.ReservaResponse;
+import br.com.smartcondo.api.dto.UnidadeRequest;
+import br.com.smartcondo.api.dto.UnidadeResponse;
+import br.com.smartcondo.api.dto.VisitanteRequest;
+import br.com.smartcondo.api.dto.VisitanteResponse;
 import br.com.smartcondo.domain.model.AreaComum;
 import br.com.smartcondo.domain.model.Morador;
 import br.com.smartcondo.domain.model.Reserva;
@@ -11,13 +21,6 @@ import br.com.smartcondo.domain.repository.ReservaRepository;
 import br.com.smartcondo.domain.repository.UnidadeRepository;
 import br.com.smartcondo.domain.repository.VisitanteRepository;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,10 +33,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api")
@@ -59,196 +62,223 @@ public class CadastroController {
     }
 
     @GetMapping("/unidades")
-    public List<UnidadeResponse> listarUnidades() {
-        return unidadeRepository.findAll().stream().map(CadastroController::toResponse).toList();
+    public ResponseEntity<List<UnidadeResponse>> listarUnidades() {
+        return ResponseEntity.ok(unidadeRepository.findAll().stream().map(UnidadeResponse::from).toList());
     }
 
     @GetMapping("/unidades/bloco/{bloco}")
-    public List<UnidadeResponse> listarUnidadesPorBloco(@PathVariable String bloco) {
-        return unidadeRepository.findByBloco(bloco.trim()).stream().map(CadastroController::toResponse).toList();
+    public ResponseEntity<List<UnidadeResponse>> listarUnidadesPorBloco(@PathVariable String bloco) {
+        return ResponseEntity.ok(unidadeRepository.findByBloco(bloco.trim()).stream()
+                .map(UnidadeResponse::from).toList());
+    }
+
+    @GetMapping("/unidades/{id}")
+    public ResponseEntity<UnidadeResponse> buscarUnidadePorId(@PathVariable Long id) {
+        return ResponseEntity.ok(UnidadeResponse.from(buscarUnidade(id)));
     }
 
     @PostMapping("/unidades")
     public ResponseEntity<UnidadeResponse> criarUnidade(@Valid @RequestBody UnidadeRequest request) {
-        garantirUnidadeDisponivel(request.bloco(), request.numero(), null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(unidadeRepository.save(new Unidade(
-                null, request.bloco().trim(), request.numero().trim(), request.areaMetrosQuadrados(), null, null))));
+        Unidade unidade = request.toEntity();
+        garantirUnidadeDisponivel(unidade.getBloco(), unidade.getNumero(), null);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(UnidadeResponse.from(unidadeRepository.save(unidade)));
     }
 
     @PutMapping("/unidades/{id}")
-    public UnidadeResponse atualizarUnidade(@PathVariable Long id, @Valid @RequestBody UnidadeRequest request) {
+    public ResponseEntity<UnidadeResponse> atualizarUnidade(
+            @PathVariable Long id, @Valid @RequestBody UnidadeRequest request) {
         Unidade unidade = buscarUnidade(id);
-        garantirUnidadeDisponivel(request.bloco(), request.numero(), id);
-        unidade.setBloco(request.bloco().trim());
-        unidade.setNumero(request.numero().trim());
-        unidade.setAreaMetrosQuadrados(request.areaMetrosQuadrados());
-        return toResponse(unidadeRepository.save(unidade));
+        Unidade dados = request.toEntity();
+        garantirUnidadeDisponivel(dados.getBloco(), dados.getNumero(), id);
+        unidade.setBloco(dados.getBloco());
+        unidade.setNumero(dados.getNumero());
+        unidade.setAreaMetrosQuadrados(dados.getAreaMetrosQuadrados());
+        return ResponseEntity.ok(UnidadeResponse.from(unidadeRepository.save(unidade)));
     }
 
     @DeleteMapping("/unidades/{id}")
-    public void excluirUnidade(@PathVariable Long id) {
+    public ResponseEntity<Void> excluirUnidade(@PathVariable Long id) {
         unidadeRepository.delete(buscarUnidade(id));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/moradores")
-    public List<MoradorResponse> listarMoradores() {
-        return moradorRepository.findAll().stream().map(CadastroController::toResponse).toList();
+    public ResponseEntity<List<MoradorResponse>> listarMoradores() {
+        return ResponseEntity.ok(moradorRepository.findAll().stream().map(MoradorResponse::from).toList());
+    }
+
+    @GetMapping("/moradores/{id}")
+    public ResponseEntity<MoradorResponse> buscarMoradorPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(MoradorResponse.from(buscarMorador(id)));
     }
 
     @GetMapping("/moradores/cpf/{cpf}")
-    public MoradorResponse buscarMoradorPorCpf(@PathVariable String cpf) {
+    public ResponseEntity<MoradorResponse> buscarMoradorPorCpf(@PathVariable String cpf) {
         Morador morador = moradorRepository.findByCpf(cpf.trim()).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Morador não encontrado."));
-        return toResponse(morador);
+                new NoSuchElementException("Morador não encontrado."));
+        return ResponseEntity.ok(MoradorResponse.from(morador));
     }
 
     @PostMapping("/moradores")
     public ResponseEntity<MoradorResponse> criarMorador(@Valid @RequestBody MoradorRequest request) {
         garantirCpfDisponivel(request.cpf(), null);
-        Morador morador = new Morador();
-        preencherMorador(morador, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(moradorRepository.save(morador)));
+        Morador morador = request.toEntity(buscarUnidade(request.unidadeId()));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(MoradorResponse.from(moradorRepository.save(morador)));
     }
 
     @PutMapping("/moradores/{id}")
-    public MoradorResponse atualizarMorador(@PathVariable Long id, @Valid @RequestBody MoradorRequest request) {
+    public ResponseEntity<MoradorResponse> atualizarMorador(
+            @PathVariable Long id, @Valid @RequestBody MoradorRequest request) {
         Morador morador = buscarMorador(id);
         garantirCpfDisponivel(request.cpf(), id);
-        preencherMorador(morador, request);
-        return toResponse(moradorRepository.save(morador));
+        Morador dados = request.toEntity(buscarUnidade(request.unidadeId()));
+        morador.setNome(dados.getNome());
+        morador.setCpf(dados.getCpf());
+        morador.setEmail(dados.getEmail());
+        morador.setTelefone(dados.getTelefone());
+        morador.setDataCadastro(dados.getDataCadastro());
+        morador.setUnidade(dados.getUnidade());
+        return ResponseEntity.ok(MoradorResponse.from(moradorRepository.save(morador)));
     }
 
     @DeleteMapping("/moradores/{id}")
-    public void excluirMorador(@PathVariable Long id) {
+    public ResponseEntity<Void> excluirMorador(@PathVariable Long id) {
         moradorRepository.delete(buscarMorador(id));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/areas-comuns")
-    public List<AreaComumResponse> listarAreasComuns() {
-        return areaComumRepository.findAll().stream().map(CadastroController::toResponse).toList();
+    public ResponseEntity<List<AreaComumResponse>> listarAreasComuns() {
+        return ResponseEntity.ok(areaComumRepository.findAll().stream().map(AreaComumResponse::from).toList());
+    }
+
+    @GetMapping("/areas-comuns/{id}")
+    public ResponseEntity<AreaComumResponse> buscarAreaComumPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(AreaComumResponse.from(buscarAreaComum(id)));
     }
 
     @PostMapping("/areas-comuns")
     public ResponseEntity<AreaComumResponse> criarAreaComum(@Valid @RequestBody AreaComumRequest request) {
-        AreaComum area = new AreaComum();
-        preencherAreaComum(area, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(areaComumRepository.save(area)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(AreaComumResponse.from(areaComumRepository.save(request.toEntity())));
     }
 
     @PutMapping("/areas-comuns/{id}")
-    public AreaComumResponse atualizarAreaComum(
+    public ResponseEntity<AreaComumResponse> atualizarAreaComum(
             @PathVariable Long id, @Valid @RequestBody AreaComumRequest request) {
         AreaComum area = buscarAreaComum(id);
-        preencherAreaComum(area, request);
-        return toResponse(areaComumRepository.save(area));
+        AreaComum dados = request.toEntity();
+        area.setNome(dados.getNome());
+        area.setDescricao(dados.getDescricao());
+        area.setCapacidade(dados.getCapacidade());
+        area.setAtiva(dados.isAtiva());
+        return ResponseEntity.ok(AreaComumResponse.from(areaComumRepository.save(area)));
     }
 
     @DeleteMapping("/areas-comuns/{id}")
-    public void excluirAreaComum(@PathVariable Long id) {
+    public ResponseEntity<Void> excluirAreaComum(@PathVariable Long id) {
         areaComumRepository.delete(buscarAreaComum(id));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/reservas")
-    public List<ReservaResponse> listarReservas() {
-        return reservaRepository.findAll().stream().map(CadastroController::toResponse).toList();
+    public ResponseEntity<List<ReservaResponse>> listarReservas() {
+        return ResponseEntity.ok(reservaRepository.findAll().stream().map(ReservaResponse::from).toList());
+    }
+
+    @GetMapping("/reservas/{id}")
+    public ResponseEntity<ReservaResponse> buscarReservaPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(ReservaResponse.from(buscarReserva(id)));
     }
 
     @GetMapping("/reservas/morador/{moradorId}")
-    public List<ReservaResponse> listarReservasPorMorador(@PathVariable Long moradorId) {
-        return reservaRepository.findByMoradorId(moradorId).stream().map(CadastroController::toResponse).toList();
+    public ResponseEntity<List<ReservaResponse>> listarReservasPorMorador(@PathVariable Long moradorId) {
+        return ResponseEntity.ok(reservaRepository.findByMoradorId(moradorId).stream()
+                .map(ReservaResponse::from).toList());
     }
 
     @GetMapping("/reservas/area-comum/{areaComumId}")
-    public List<ReservaResponse> listarReservasPorAreaComum(@PathVariable Long areaComumId) {
-        return reservaRepository.findByAreaComumId(areaComumId).stream()
-                .map(CadastroController::toResponse).toList();
+    public ResponseEntity<List<ReservaResponse>> listarReservasPorAreaComum(@PathVariable Long areaComumId) {
+        return ResponseEntity.ok(reservaRepository.findByAreaComumId(areaComumId).stream()
+                .map(ReservaResponse::from).toList());
     }
 
     @PostMapping("/reservas")
     public ResponseEntity<ReservaResponse> criarReserva(@Valid @RequestBody ReservaRequest request) {
         validarPeriodoReserva(request.dataHoraInicio(), request.dataHoraFim());
-        Reserva reserva = new Reserva();
-        preencherReserva(reserva, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(reservaRepository.save(reserva)));
+        Reserva reserva = request.toEntity(buscarMorador(request.moradorId()),
+                buscarAreaComum(request.areaComumId()));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ReservaResponse.from(reservaRepository.save(reserva)));
     }
 
     @PutMapping("/reservas/{id}")
-    public ReservaResponse atualizarReserva(@PathVariable Long id, @Valid @RequestBody ReservaRequest request) {
+    public ResponseEntity<ReservaResponse> atualizarReserva(
+            @PathVariable Long id, @Valid @RequestBody ReservaRequest request) {
         validarPeriodoReserva(request.dataHoraInicio(), request.dataHoraFim());
         Reserva reserva = buscarReserva(id);
-        preencherReserva(reserva, request);
-        return toResponse(reservaRepository.save(reserva));
+        Reserva dados = request.toEntity(buscarMorador(request.moradorId()),
+                buscarAreaComum(request.areaComumId()));
+        reserva.setDataHoraInicio(dados.getDataHoraInicio());
+        reserva.setDataHoraFim(dados.getDataHoraFim());
+        reserva.setStatus(dados.getStatus());
+        reserva.setQuantidadeConvidados(dados.getQuantidadeConvidados());
+        reserva.setMorador(dados.getMorador());
+        reserva.setAreaComum(dados.getAreaComum());
+        return ResponseEntity.ok(ReservaResponse.from(reservaRepository.save(reserva)));
     }
 
     @DeleteMapping("/reservas/{id}")
-    public void excluirReserva(@PathVariable Long id) {
+    public ResponseEntity<Void> excluirReserva(@PathVariable Long id) {
         reservaRepository.delete(buscarReserva(id));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/visitantes")
-    public List<VisitanteResponse> listarVisitantes() {
-        return visitanteRepository.findAll().stream().map(CadastroController::toResponse).toList();
+    public ResponseEntity<List<VisitanteResponse>> listarVisitantes() {
+        return ResponseEntity.ok(visitanteRepository.findAll().stream().map(VisitanteResponse::from).toList());
+    }
+
+    @GetMapping("/visitantes/{id}")
+    public ResponseEntity<VisitanteResponse> buscarVisitantePorId(@PathVariable Long id) {
+        return ResponseEntity.ok(VisitanteResponse.from(buscarVisitante(id)));
     }
 
     @GetMapping("/visitantes/unidade/{unidadeId}")
-    public List<VisitanteResponse> listarVisitantesPorUnidade(@PathVariable Long unidadeId) {
-        return visitanteRepository.findByUnidadeId(unidadeId).stream().map(CadastroController::toResponse).toList();
+    public ResponseEntity<List<VisitanteResponse>> listarVisitantesPorUnidade(@PathVariable Long unidadeId) {
+        return ResponseEntity.ok(visitanteRepository.findByUnidadeId(unidadeId).stream()
+                .map(VisitanteResponse::from).toList());
     }
 
     @PostMapping("/visitantes")
     public ResponseEntity<VisitanteResponse> criarVisitante(@Valid @RequestBody VisitanteRequest request) {
         validarPeriodoVisita(request.dataHoraEntrada(), request.dataHoraSaida());
-        Visitante visitante = new Visitante();
-        preencherVisitante(visitante, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(visitanteRepository.save(visitante)));
+        Visitante visitante = request.toEntity(buscarUnidade(request.unidadeId()));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(VisitanteResponse.from(visitanteRepository.save(visitante)));
     }
 
     @PutMapping("/visitantes/{id}")
-    public VisitanteResponse atualizarVisitante(
+    public ResponseEntity<VisitanteResponse> atualizarVisitante(
             @PathVariable Long id, @Valid @RequestBody VisitanteRequest request) {
         validarPeriodoVisita(request.dataHoraEntrada(), request.dataHoraSaida());
         Visitante visitante = buscarVisitante(id);
-        preencherVisitante(visitante, request);
-        return toResponse(visitanteRepository.save(visitante));
+        Visitante dados = request.toEntity(buscarUnidade(request.unidadeId()));
+        visitante.setNome(dados.getNome());
+        visitante.setDocumento(dados.getDocumento());
+        visitante.setTelefone(dados.getTelefone());
+        visitante.setDataHoraEntrada(dados.getDataHoraEntrada());
+        visitante.setDataHoraSaida(dados.getDataHoraSaida());
+        visitante.setUnidade(dados.getUnidade());
+        return ResponseEntity.ok(VisitanteResponse.from(visitanteRepository.save(visitante)));
     }
 
     @DeleteMapping("/visitantes/{id}")
-    public void excluirVisitante(@PathVariable Long id) {
+    public ResponseEntity<Void> excluirVisitante(@PathVariable Long id) {
         visitanteRepository.delete(buscarVisitante(id));
-    }
-
-    private void preencherMorador(Morador morador, MoradorRequest request) {
-        morador.setNome(request.nome().trim());
-        morador.setCpf(request.cpf().trim());
-        morador.setEmail(request.email());
-        morador.setTelefone(request.telefone());
-        morador.setDataCadastro(request.dataCadastro() == null ? LocalDate.now() : request.dataCadastro());
-        morador.setUnidade(buscarUnidade(request.unidadeId()));
-    }
-
-    private void preencherAreaComum(AreaComum area, AreaComumRequest request) {
-        area.setNome(request.nome().trim());
-        area.setDescricao(request.descricao());
-        area.setCapacidade(request.capacidade());
-        area.setAtiva(request.ativa() == null || request.ativa());
-    }
-
-    private void preencherReserva(Reserva reserva, ReservaRequest request) {
-        reserva.setDataHoraInicio(request.dataHoraInicio());
-        reserva.setDataHoraFim(request.dataHoraFim());
-        reserva.setStatus(request.status() == null ? Reserva.StatusReserva.PENDENTE : request.status());
-        reserva.setQuantidadeConvidados(request.quantidadeConvidados() == null ? 0 : request.quantidadeConvidados());
-        reserva.setMorador(buscarMorador(request.moradorId()));
-        reserva.setAreaComum(buscarAreaComum(request.areaComumId()));
-    }
-
-    private void preencherVisitante(Visitante visitante, VisitanteRequest request) {
-        visitante.setNome(request.nome().trim());
-        visitante.setDocumento(request.documento().trim());
-        visitante.setTelefone(request.telefone());
-        visitante.setDataHoraEntrada(request.dataHoraEntrada());
-        visitante.setDataHoraSaida(request.dataHoraSaida());
-        visitante.setUnidade(buscarUnidade(request.unidadeId()));
+        return ResponseEntity.noContent().build();
     }
 
     private void garantirCpfDisponivel(String cpf, Long idAtual) {
@@ -284,124 +314,26 @@ public class CadastroController {
 
     private Unidade buscarUnidade(Long id) {
         return unidadeRepository.findById(id).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Unidade não encontrada."));
+                new NoSuchElementException("Unidade não encontrada."));
     }
 
     private Morador buscarMorador(Long id) {
         return moradorRepository.findById(id).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Morador não encontrado."));
+                new NoSuchElementException("Morador não encontrado."));
     }
 
     private AreaComum buscarAreaComum(Long id) {
         return areaComumRepository.findById(id).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Área comum não encontrada."));
+                new NoSuchElementException("Área comum não encontrada."));
     }
 
     private Reserva buscarReserva(Long id) {
         return reservaRepository.findById(id).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Reserva não encontrada."));
+                new NoSuchElementException("Reserva não encontrada."));
     }
 
     private Visitante buscarVisitante(Long id) {
         return visitanteRepository.findById(id).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Visitante não encontrado."));
-    }
-
-    private static UnidadeResponse toResponse(Unidade unidade) {
-        return new UnidadeResponse(unidade.getId(), unidade.getBloco(), unidade.getNumero(),
-                unidade.getAreaMetrosQuadrados());
-    }
-
-    private static MoradorResponse toResponse(Morador morador) {
-        return new MoradorResponse(morador.getId(), morador.getNome(), morador.getCpf(), morador.getEmail(),
-                morador.getTelefone(), morador.getDataCadastro(), morador.getUnidade().getId());
-    }
-
-    private static AreaComumResponse toResponse(AreaComum area) {
-        return new AreaComumResponse(area.getId(), area.getNome(), area.getDescricao(),
-                area.getCapacidade(), area.isAtiva());
-    }
-
-    private static ReservaResponse toResponse(Reserva reserva) {
-        return new ReservaResponse(reserva.getId(), reserva.getDataHoraInicio(), reserva.getDataHoraFim(),
-                reserva.getStatus(), reserva.getQuantidadeConvidados(), reserva.getMorador().getId(),
-                reserva.getAreaComum().getId());
-    }
-
-    private static VisitanteResponse toResponse(Visitante visitante) {
-        return new VisitanteResponse(visitante.getId(), visitante.getNome(), visitante.getDocumento(),
-                visitante.getTelefone(), visitante.getDataHoraEntrada(), visitante.getDataHoraSaida(),
-                visitante.getUnidade().getId());
-    }
-
-    public record UnidadeRequest(
-            @NotBlank @Pattern(regexp = "^(?:[1-9]|1[0-4])$", message = "Selecione um bloco entre 1 e 14.") String bloco,
-            @NotBlank @Pattern(regexp = "^(?:11|12|13|14|21|22|23|24|31|32|33|34|41|42|43|44)$",
-                    message = "Selecione um apartamento disponível.") String numero,
-            @PositiveOrZero BigDecimal areaMetrosQuadrados) {
-    }
-
-    public record UnidadeResponse(Long id, String bloco, String numero, BigDecimal areaMetrosQuadrados) {
-    }
-
-    public record MoradorRequest(
-            @NotBlank @Size(max = 120) String nome,
-            @NotBlank @Size(max = 14) String cpf,
-            @Email @Size(max = 160) String email,
-            @Size(max = 20) String telefone,
-            LocalDate dataCadastro,
-            @NotNull Long unidadeId) {
-    }
-
-    public record MoradorResponse(
-            Long id, String nome, String cpf, String email, String telefone, LocalDate dataCadastro, Long unidadeId) {
-    }
-
-    public record AreaComumRequest(
-            @NotBlank @Size(max = 100) String nome,
-            @Size(max = 500) String descricao,
-            @NotNull @Positive Integer capacidade,
-            Boolean ativa) {
-    }
-
-    public record AreaComumResponse(Long id, String nome, String descricao, Integer capacidade, boolean ativa) {
-    }
-
-    public record ReservaRequest(
-            @NotNull LocalDateTime dataHoraInicio,
-            @NotNull LocalDateTime dataHoraFim,
-            Reserva.StatusReserva status,
-            @PositiveOrZero Integer quantidadeConvidados,
-            @NotNull Long moradorId,
-            @NotNull Long areaComumId) {
-    }
-
-    public record ReservaResponse(
-            Long id,
-            LocalDateTime dataHoraInicio,
-            LocalDateTime dataHoraFim,
-            Reserva.StatusReserva status,
-            Integer quantidadeConvidados,
-            Long moradorId,
-            Long areaComumId) {
-    }
-
-    public record VisitanteRequest(
-            @NotBlank @Size(max = 120) String nome,
-            @NotBlank @Size(max = 30) String documento,
-            @Size(max = 20) String telefone,
-            @NotNull LocalDateTime dataHoraEntrada,
-            LocalDateTime dataHoraSaida,
-            @NotNull Long unidadeId) {
-    }
-
-    public record VisitanteResponse(
-            Long id,
-            String nome,
-            String documento,
-            String telefone,
-            LocalDateTime dataHoraEntrada,
-            LocalDateTime dataHoraSaida,
-            Long unidadeId) {
+                new NoSuchElementException("Visitante não encontrado."));
     }
 }

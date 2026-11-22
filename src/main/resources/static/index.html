@@ -564,7 +564,10 @@
             let message = `A solicitação falhou (${response.status}).`;
             try {
                 const problem = await response.json();
-                message = problem.message || problem.detail || message;
+                const validationMessages = Array.isArray(problem.errors)
+                    ? problem.errors.map((error) => `${error.field}: ${error.message}`).join("\n")
+                    : "";
+                message = problem.message || problem.detail || validationMessages || message;
             } catch (error) {
                 console.error("Não foi possível ler a mensagem de erro da API.", error);
             }

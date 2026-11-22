@@ -35,4 +35,15 @@ class StatusControllerTest {
                 .andExpect(jsonPath("$.visitantes").value(0))
                 .andExpect(jsonPath("$.areasComuns").value(0));
     }
+
+    @Test
+    void deveDisponibilizarSwaggerUiEOpenApi() throws Exception {
+        mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title").value("SmartCondo API"))
+                .andExpect(jsonPath("$.info.version").value("v1"));
+    }
 }

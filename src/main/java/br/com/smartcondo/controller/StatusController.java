@@ -6,6 +6,7 @@ import br.com.smartcondo.domain.repository.ReservaRepository;
 import br.com.smartcondo.domain.repository.UnidadeRepository;
 import br.com.smartcondo.domain.repository.VisitanteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,22 +36,22 @@ public class StatusController {
     }
 
     @GetMapping("/api/status")
-    public Map<String, String> status() {
-        return Map.of(
+    public ResponseEntity<Map<String, String>> status() {
+        return ResponseEntity.ok(Map.of(
                 "aplicacao", "SmartCondo",
                 "status", "online",
                 "mensagem", "Aplicacao de gestao condominial em execucao"
-        );
+        ));
     }
 
     @GetMapping("/api/dashboard")
-    public Map<String, Long> dashboard() {
-        return Map.of(
+    public ResponseEntity<Map<String, Long>> dashboard() {
+        return ResponseEntity.ok(Map.of(
                 "moradores", moradorRepository.count(),
                 "unidades", unidadeRepository.count(),
                 "reservas", reservaRepository.count(),
                 "visitantes", visitanteRepository.count(),
                 "areasComuns", areaComumRepository.count()
-        );
+        ));
     }
 }
