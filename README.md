@@ -5,7 +5,7 @@
 - **Líder:** Cleberson
 - **Integrantes:** Marceu, Diego, Thiago, Jeliel e Alisson
 - **Repositório Git:** [SmartCondo no GitHub](https://github.com/maia202/smartcondo)
-- **Aplicação publicada:** [https://smartcondo-od8l.onrender.com/](https://smartcondo-od8l.onrender.com/)
+- **Aplicação publicada:** [https://smartcondo-53uf.onrender.com/](https://smartcondo-53uf.onrender.com/)
 
 ## 1.1 Nome do Produto
 
